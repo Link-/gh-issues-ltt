@@ -22,7 +22,7 @@
   "dependencies": {
     "@actions/core": "^1.2.5",
     "@menadevs/objectron": "^0.1.14",
-    "marked": "^1.2.0",
+    "marked": ">=4.0.10",
     "node-fetch": "^2.6.1"
   }
 }
