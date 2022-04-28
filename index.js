@@ -261,7 +261,7 @@ ${newActionItemsList}
  */
 function main() {
   try {
-    const params = {
+    let params = {
       owner: core.getInput('owner'),
       repo: core.getInput('repo'),
       issueNumber: core.getInput('issueNumber'),
@@ -278,6 +278,7 @@ function main() {
     }
     core.info(`INFO: Syncing all new action items in "${params.repo}" from issue #${params.issueNumber}`);
     core.info(`INFO: Fetching details of issue #${params.issueNumber}`);
+    core.info(`INFO: Host: #${params.githubHost}`);
     // Fetch issue details and sync with aggregate issue
     fetchIssue(params)
       .then((issue) => {
