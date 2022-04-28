@@ -47,7 +47,6 @@ query {
     headers: headers
   })
     .then(res => {
-      core.info(JSON.stringify(res));
       return res.json();
     })
     .then(res => {
