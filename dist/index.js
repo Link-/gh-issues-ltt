@@ -4710,9 +4710,58 @@ function fetchIssue(params) {
   const query = {
     "query": `
 query {
-  user(login: "${params.user}") {
-    repository(name: "${params.repo}") {
-      issue(number: ${params.issueNumber}) {
+  repository(owner: "${params.owner}", name: "${params.repo}") {
+    issue(number: ${params.issueNumber}) {
+      number
+      id
+      databaseId
+      title
+      state
+      author {
+        login
+      }
+      body
+    }
+  }
+}`
+  };
+  return fetch(params.githubHost, {
+    method: "POST",
+    body: JSON.stringify(query),
+    headers: headers
+  })
+    .then(res => {
+      return res.json();
+    })
+    .then(res => {
+      return res.data.repository.issue;
+    })
+    .catch(error => {
+      core.info("FATAL: Could not fetch issue: ", error.message);
+      core.info(error.stack);
+    });
+}
+
+
+/**
+ * Will fetch the first OPEN aggregate issue with the label 'gh-issues-ltt'
+ *
+ * @param {*} params 
+ */
+function fetchAggregateIssue(params) {
+  const headers = {
+    "Authorization": `Bearer ${params.token}`,
+    "Content-Type": "application/json"
+  }
+  const query = {
+    "query": `
+query {
+  repository(owner: "${params.owner}", name: "${params.repo}") {
+    issues(first: 1, filterBy: {
+      labels: ["${params.aggregateIssueLabel}"],
+      states: OPEN
+    }) {
+      nodes {
         number
         id
         databaseId
@@ -4736,62 +4785,11 @@ query {
       return res.json();
     })
     .then(res => {
-      return res.data.user.repository.issue;
+      return res.data.repository.issues.nodes[0];
     })
     .catch(error => {
-      core.setOutput("FATAL: Could not fetch aggregate issue: ", error.message);
-    });
-}
-
-
-/**
- * Will fetch the first OPEN aggregate issue with the label 'gh-issues-ltt'
- *
- * @param {*} params 
- */
-function fetchAggregateIssue(params) {
-  const headers = {
-    "Authorization": `Bearer ${params.token}`,
-    "Content-Type": "application/json"
-  }
-  const query = {
-    "query": `
-query {
-  user(login: "${params.user}") {
-    repository(name: "${params.repo}") {
-      issues(first: 1, filterBy: {
-        labels: ["${params.aggregateIssueLabel}"],
-        states: OPEN
-      }) {
-        nodes {
-          number
-          id
-          databaseId
-          title
-          state
-          author {
-            login
-          }
-          body
-        }
-      }
-    }
-  }
-}`
-  };
-  return fetch(params.githubHost, {
-    method: "POST",
-    body: JSON.stringify(query),
-    headers: headers
-  })
-    .then(res => {
-      return res.json();
-    })
-    .then(res => {
-      return res.data.user.repository.issues.nodes[0];
-    })
-    .catch(error => {
-      core.setOutput("FATAL: Could not fetch aggregate issue: ", error.message);
+      core.info("FATAL: Could not fetch aggregate issue: ", error.message);
+      core.info(error.stack);
     });
 }
 
@@ -4866,7 +4864,8 @@ mutation ($updateIssueInput:UpdateIssueInput!) {
       return res;
     })
     .catch(error => {
-      core.setOutput("FATAL: Could not update aggregate issue: ", error.message);
+      core.info("FATAL: Could not update aggregate issue: ", error.message);
+      core.info(error.stack);
     });
 }
 
@@ -4881,7 +4880,9 @@ mutation ($updateIssueInput:UpdateIssueInput!) {
  * @param {*} aggregateIssue 
  */
 function syncAggregateIssue(params, actionItems, aggregateIssue) {
-  if (Object.entries(aggregateIssue).length === 0)
+  if (!aggregateIssue)
+    throw new Error('FATAL: Failed to retrieve aggregate issue.');
+  else if (aggregateIssue && Object.entries(aggregateIssue).length === 0)
     throw new Error('FATAL: Aggregate issue does not exist. Create it first and add the appropriate label.')
   const parsedAggregateIssue = marked.lexer(aggregateIssue.body);
   // Identify the heading and the list right below it that require change
@@ -4940,12 +4941,12 @@ ${newActionItemsList}
 }
 
 /**
- * 
+ * Main
  */
 function main() {
   try {
     const params = {
-      user: core.getInput('user'),
+      owner: core.getInput('owner'),
       repo: core.getInput('repo'),
       issueNumber: core.getInput('issueNumber'),
       aggregateIssueLabel: core.getInput('aggregateIssueLabel'),
@@ -4959,34 +4960,34 @@ function main() {
     } else {
       params.githubHost = `${params.githubHost}/api/graphql`;
     }
-    core.info(`Syncing all new action items in ${params.repo} from issue #${params.issueNumber}`);
-    const time = (new Date()).toTimeString();
-    core.setOutput("time", time);
-    core.setOutput(`INFO: Fetching details of issue #${params.issueNumber}`);
+    core.info(`INFO: Syncing all new action items in "${params.repo}" from issue #${params.issueNumber}`);
+    core.info(`INFO: Fetching details of issue #${params.issueNumber}`);
     // Fetch issue details and sync with aggregate issue
     fetchIssue(params)
       .then((issue) => {
-        core.setOutput("INFO: Extracting action items");
+        core.info("INFO: Extracting action items");
         return extractActionItems(params, issue)
       })
       .then((actionItems) => {
-        core.setOutput("INFO: Fetching aggregate issue details");
+        core.info("INFO: Fetching aggregate issue details");
         return Promise.all([fetchAggregateIssue(params), actionItems]);
       })
       .then(([aggregateIssue, actionItems]) => {
-        core.setOutput("INFO: Looking for changes and syncing...");
+        core.info("INFO: Looking for changes and syncing...");
         return syncAggregateIssue(params, actionItems, aggregateIssue);
+      })
+      .then(() => {
+        core.info('< 200');
+        core.setOutput(`INFO: Action items syncing completed successfully!`);
       })
       .catch(error => {
         core.debug(error);
+        core.info(error.stack);
         core.setFailed(`FATAL: Could not sync aggregate issue: ${error.message}`);
-      })
-      .finally(() => {
-        core.info(`< 200 ${Date.now() - time}ms`);
-        core.setOutput(`INFO: Action items syncing completed successfully!`);
       });
   } catch (error) {
     core.debug(error);
+    core.info(error.stack);
     core.setFailed(error.message);
   }
 }

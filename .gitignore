@@ -172,8 +172,12 @@ tags
 # Ignore all local history of files
 .history
 
-### Local files that should not be committed ###
+### Local ###
 local/
+local_testing.yml
+
+### Secrets ###
+.secrets
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,node,vim
 

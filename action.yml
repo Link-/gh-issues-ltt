@@ -1,19 +1,23 @@
-name: 'GH-Issues-LtT'
-description: 'Aggregates action items from several GitHub issues into 1 backlog issue'
+name: 'Action Items Sync'
+description: 'Extract action items from multiple issues and aggregate them into 1'
 inputs:
-  user:
-    description: 'Issue owner'
+  owner:
+    description: 'Repository Owner (User or Organization)'
     required: true
+
   repo:
     description: 'Repository to monitor'
     required: true
+
   issueNumber:
     description: 'Created / Edited issue number'
     required: true
+
   aggregateIssueLabel:
     description: 'Label to mark the aggregate issue'
     required: true
     default: 'action-items-main'
+
   GitHubHost:
     description: 'Defaults to github.com. Can be used to point to a GitHub Enterprise instance'
     required: false
