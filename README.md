@@ -45,15 +45,14 @@ Copy and paste the workflow below to your workflow file.
 
 1. Use the latest version of `link-/gh-issues-ltt`
 2. Update the label used to identify issue you want to sync `<SYNC_LABEL>` with a label name of choice
-3. Update the **aggregateIssueLabel** `<IDENTIFYING_LABEL>` with the name of the identifying label you created in the pre-requisites
-4. If you are using this action for repositories owned by an organization, make sure to specify the organization name in the `owner` input
+3. Update the **aggregateIssueLabel** `<IDENTIFYING_LABEL>` with the name of the identifying label you created in the prerequisites
+4. If you are using this action for repositories **owned by an organization**, make sure to **hardcode the organization name in the `owner` input** field
 
 ```yaml
 name: Synchronize Action Items
 on:
   issues:
     types: [labeled]
-
 
 jobs:
   Sync-Action-Items:
@@ -72,6 +71,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+### Supported input fields
+
+| Field               | Description                                                                  | Required | Example values                                                                                                          |
+|---------------------|------------------------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------|
+| owner               | Repository Owner (User or Organization)                                      | yes      | - `${{ github.actor }}` if the repository is owned by a user - `Organization name` if the repository is owned by an org |
+| repo                | Repository to monitor                                                        | yes      | `${{ github.event.repository.name }}`                                                                                   |
+| issueNumber         | Created / Edited issue number                                                | yes      | `${{ github.event.issue.number }}`                                                                                      |
+| aggregateIssueLabel | Label to mark the aggregate issue                                            | yes      | `label-name` whatever label you want to use for the main aggregate issue                                                |
+| GitHubHost          | Defaults to github.com. Can be used to point to a GitHub Enterprise instance | no       | `https://github.example.com` - URL for your GitHub Enterprise Server instance. NO TRAILING `/`                          |
+
 ## Limitations
 
 - If the issue title has been modified, it'll be assumed as a new issue and a new block will be created.
@@ -86,6 +95,9 @@ This could be due to multiple problems. Revisit the `pre-requisites` and `workfl
 
 ## Changelog
 
+- v0.2.0-beta
+  - Fixes Add support for GHES
+  - Upgrade marked dependency to fix regex vulnerability
 - v0.1.5-beta
   - Support for repositories owned by organizations (public / private)
 - v0.1.3-beta
