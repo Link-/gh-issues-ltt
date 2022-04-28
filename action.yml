@@ -1,19 +1,23 @@
 name: 'GH-Issues-LtT'
-description: 'Extracts lists from a GitHub Issue and Transforms them to Tasks'
+description: 'Aggregates action items from several GitHub issues into 1 backlog issue'
 inputs:
   user:
-    description: 'Issue Owner'
+    description: 'Issue owner'
     required: true
   repo:
-    description: 'Repository To Monitor'
+    description: 'Repository to monitor'
     required: true
   issueNumber:
-    description: 'Created / Edited Issue Number'
+    description: 'Created / Edited issue number'
     required: true
   aggregateIssueLabel:
-    description: 'Label to Mark the Aggregate Issue'
+    description: 'Label to mark the aggregate issue'
     required: true
-    default: 'gh-issues-ltt'
+    default: 'action-items-main'
+  GitHubHost:
+    description: 'Defaults to github.com. Can be used to point to a GitHub Enterprise instance'
+    required: false
+    default: 'https://api.github.com'
 runs:
   using: 'node12'
   main: 'dist/index.js'

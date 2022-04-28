@@ -2,8 +2,6 @@ const core = require("@actions/core");
 const fetch = require("node-fetch");
 const marked = require("marked");
 
-const GITHUB_API_URL = "https://api.github.com/graphql"
-
 /**
  * Returns current date/time with the format: '2012-11-04 14:55:45'
  */
@@ -45,7 +43,7 @@ query {
   }
 }`
   };
-  return fetch(GITHUB_API_URL, {
+  return fetch(params.githubHost, {
     method: "POST",
     body: JSON.stringify(query),
     headers: headers
@@ -97,7 +95,7 @@ query {
   }
 }`
   };
-  return fetch(GITHUB_API_URL, {
+  return fetch(params.githubHost, {
     method: "POST",
     body: JSON.stringify(query),
     headers: headers
@@ -172,7 +170,7 @@ mutation ($updateIssueInput:UpdateIssueInput!) {
       }
     }
   };
-  return fetch(GITHUB_API_URL, {
+  return fetch(params.githubHost, {
     method: "POST",
     body: JSON.stringify(query),
     headers: headers
@@ -267,7 +265,15 @@ function main() {
       repo: core.getInput('repo'),
       issueNumber: core.getInput('issueNumber'),
       aggregateIssueLabel: core.getInput('aggregateIssueLabel'),
-      token: process.env.GITHUB_TOKEN
+      githubHost: core.getInput('GitHubHost'),
+      token: process.env.GITHUB_TOKEN,
+    }
+    // Craft the GraphQL API endpoint based on whether we're running on 
+    // github.com or GitHub Enterprise Server
+    if (params.githubHost == "https://api.github.com") {
+      params.githubHost = `${params.githubHost}/graphql`;
+    } else {
+      params.githubHost = `${params.githubHost}/api/graphql`;
     }
     core.info(`Syncing all new action items in ${params.repo} from issue #${params.issueNumber}`);
     const time = (new Date()).toTimeString();
