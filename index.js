@@ -98,6 +98,7 @@ query {
     headers: headers
   })
     .then(res => {
+      core.info(res);
       return res.json();
     })
     .then(res => {
@@ -278,7 +279,7 @@ function main() {
     }
     core.info(`INFO: Syncing all new action items in "${params.repo}" from issue #${params.issueNumber}`);
     core.info(`INFO: Fetching details of issue #${params.issueNumber}`);
-    core.info(`INFO: Host: #${params.githubHost}`);
+    core.info(`INFO: Host: ${params.githubHost}`);
     // Fetch issue details and sync with aggregate issue
     fetchIssue(params)
       .then((issue) => {
