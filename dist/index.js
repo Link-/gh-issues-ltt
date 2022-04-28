@@ -4731,6 +4731,7 @@ query {
     headers: headers
   })
     .then(res => {
+      core.info(res);
       return res.json();
     })
     .then(res => {
@@ -4782,7 +4783,6 @@ query {
     headers: headers
   })
     .then(res => {
-      core.info(res);
       return res.json();
     })
     .then(res => {
